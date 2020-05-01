@@ -22,47 +22,72 @@ namespace MulliganWallet
         private AccountModel account;
         private UserModel user;
         private TextView balance, fullname;
-        private Button depositwithdraw, makeTransaction, viewNotifications, qrReader, btnViewProfile, viewHistory, viewFriends;
+        private Button depositwithdraw, makeTransaction, viewNotifications, qrReader, btnViewProfile, viewHistory, viewFriends, exit;
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
             SetContentView(Resource.Layout.main);
             balance = FindViewById<TextView>(Resource.Id.MainMenuBalance);
             fullname = FindViewById<TextView>(Resource.Id.MainMenuFullName);
-            balance.Text = String.Format("Balance:\n{0:C}", Intent.GetFloatExtra("Balance", 0));
-            fullname.Text = Intent.GetStringExtra("FullName");
+
+            account = BsonSerializer.Deserialize<AccountModel>(Intent.GetStringExtra("Account"));
+            user = BsonSerializer.Deserialize<UserModel>(Intent.GetStringExtra("User"));
+
+            balance.Text = String.Format("Balance:\n{0:C}", account.Balance);
+            fullname.Text = Intent.GetStringExtra(user.FullName);
 
             btnViewProfile = FindViewById<Button>(Resource.Id.btn_main_view_profile);
             btnViewProfile.Click += BtnViewProfile_Click;
 
             depositwithdraw = FindViewById<Button>(Resource.Id.btn_main_deposit_withdraw);
             depositwithdraw.Click += Depositwithdraw_Click;
+
+            makeTransaction = FindViewById<Button>(Resource.Id.btn_main_make_transaction);
+            makeTransaction.Click += MakeTransaction_Click;
+
+            viewHistory = FindViewById<Button>(Resource.Id.btn_main_history);
+            viewHistory.Click += ViewHistory_Click;
+
+            exit = FindViewById<Button>(Resource.Id.btn_exit_main_menu);
+            exit.Click += (object sender, EventArgs e) => { Finish(); };
+        }
+
+        private async void ViewHistory_Click(object sender, EventArgs e)
+        {
+            var transactions = await ModelMethods.GetTransactionsInvolvingAccount(account);
+            Intent intent = new Intent(this, typeof(TransactionHistoryActivity));
+            intent.PutExtra("Account", account.ToJson());
+            intent.PutExtra("User", user.ToJson());
+            intent.PutExtra("Transactions", transactions.ToJson());
+            this.StartActivity(intent);
+            Finish();
+        }
+
+        private void MakeTransaction_Click(object sender, EventArgs e)
+        {
+            Intent intent = new Intent(this, typeof(TransactionMakeActivity));
+            intent.PutExtra("User", user.ToJson());
+            intent.PutExtra("Account", account.ToJson());
+            this.StartActivity(intent);
+            Finish();
         }
 
         private void Depositwithdraw_Click(object sender, EventArgs e)
         {
             Intent intent = new Intent(this, typeof(DepositWithdrawActivity));
-            intent.PutExtra("PersonID", Intent.GetStringExtra("PersonID"));
-            intent.PutExtra("Balance", Intent.GetFloatExtra("Balance", 0));
-            this.StartActivityForResult(intent, 0);
+            intent.PutExtra("Account", account.ToJson());
+            intent.PutExtra("User", user.ToJson());
+            this.StartActivity(intent);
+            Finish();
         }
 
-        private async void BtnViewProfile_Click(object sender, EventArgs e)
+        private void BtnViewProfile_Click(object sender, EventArgs e)
         {
-            BsonObjectId ID = ObjectId.Parse(Intent.GetStringExtra("PersonID"));
-
-            var result = await ModelMethods.FindUserByID(ID);
-
-            if (result != null)
-            {
-                Intent intent = new Intent(this, typeof(ProfileActivity));
-                intent.PutExtra("FullName", result.FullName);
-                intent.PutExtra("Username", result.Username);
-                intent.PutExtra("Email", result.Email);
-                intent.PutExtra("PhoneNumber", result.PhoneNumber);
-                intent.PutExtra("PersonID", Intent.GetStringExtra("PersonID"));
-                this.StartActivity(intent);
-            }
+            Intent intent = new Intent(this, typeof(ProfileActivity));
+            intent.PutExtra("User", user.ToJson());
+            intent.PutExtra("Account", account.ToJson());
+            this.StartActivity(intent);
+            Finish();
         }
 
         protected override void OnActivityResult(int requestCode, [GeneratedEnum] Result resultCode, Intent data)
@@ -70,7 +95,13 @@ namespace MulliganWallet
             base.OnActivityResult(requestCode, resultCode, data);
             if (resultCode == 0)
                 if (resultCode == Result.Ok)
-                    balance.Text = data.GetFloatExtra("Balance", 0.0f).ToString();
+                {
+                    RunOnUiThread(() =>
+                    {
+                        balance.Text = data.GetFloatExtra("Balance", 0.0f).ToString();
+                        balance.PostInvalidate();
+                    });
+                }
         }
     }
 }

@@ -57,11 +57,6 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:id="@+id/sp_dw_payment_method"/>
-        <Button
-            android:text="Refresh"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:id="@+id/btn_dw_refresh_payment_methods" />
     </LinearLayout>
     <LinearLayout
         android:orientation="horizontal"

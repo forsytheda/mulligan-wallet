@@ -9,6 +9,8 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 
 namespace MulliganWallet
 {
@@ -17,19 +19,25 @@ namespace MulliganWallet
     {
         private TextView fullName, username, email, phoneNumber;
         private Button btnEdit, btnChangePassword, btnShowQR, btnPaymentMethods, btnSavedTransactions, btnExit;
+        private AccountModel account;
+        private UserModel user;
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
             SetContentView(Resource.Layout.profile);
+
             fullName = FindViewById<TextView>(Resource.Id.txtProfileName);
             username = FindViewById<TextView>(Resource.Id.txtProfileUsername);
             email = FindViewById<TextView>(Resource.Id.txtProfileEmail);
             phoneNumber = FindViewById<TextView>(Resource.Id.txtProfilePhoneNumber);
 
-            fullName.Text = Intent.GetStringExtra("FullName");
-            username.Text = Intent.GetStringExtra("Username");
-            email.Text = Intent.GetStringExtra("Email");
-            phoneNumber.Text = Intent.GetStringExtra("PhoneNumber");
+            account = BsonSerializer.Deserialize<AccountModel>(Intent.GetStringExtra("Account"));
+            user = BsonSerializer.Deserialize<UserModel>(Intent.GetStringExtra("User"));
+
+            fullName.Text = user.FullName;
+            username.Text = user.Username;
+            email.Text = user.Email;
+            phoneNumber.Text = user.PhoneNumber;
 
             btnEdit = FindViewById<Button>(Resource.Id.btnEditProfile);
             btnChangePassword = FindViewById<Button>(Resource.Id.btnChangePassword);
@@ -43,17 +51,21 @@ namespace MulliganWallet
             btnShowQR.Click += BtnShowQR_Click;
             btnPaymentMethods.Click += BtnPaymentMethods_Click;
             btnSavedTransactions.Click += BtnSavedTransactions_Click;
-            btnExit.Click += (object sender, EventArgs args) => { Finish(); };
+            btnExit.Click += (object sender, EventArgs args) => { Back_To_Main_Activity(); };
         }
 
         private void BtnEdit_Click(object sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            Intent intent = new Intent(this, typeof(ProfileEditActivity));
+            intent.PutExtra("User", user.ToJson());
+            intent.PutExtra("Account", account.ToJson());
+            this.StartActivity(intent);
+            Finish();
         }
 
         private void BtnChangePassword_Click(object sender, EventArgs e)
         {
-            Toast.MakeText(this, "An email has been sent to the address on file with the steps to change your password.", ToastLength.Long).Show();
+            Toast.MakeText(this, "An email has been sent to the address on file with the steps to change your password.", ToastLength.Short).Show();
         }
 
         private void BtnShowQR_Click(object sender, EventArgs e)
@@ -64,13 +76,24 @@ namespace MulliganWallet
         private void BtnPaymentMethods_Click(object sender, EventArgs e)
         {
             Intent intent = new Intent(this, typeof(PaymentMethodActivity));
-            intent.PutExtra("PersonID", Intent.GetStringExtra("PersonID"));
+            intent.PutExtra("Account", account.ToJson());
+            intent.PutExtra("User", user.ToJson());
             this.StartActivity(intent);
+            Finish();
         }
 
         private void BtnSavedTransactions_Click(object sender, EventArgs e)
         {
             throw new NotImplementedException();
+        }
+
+        private void Back_To_Main_Activity()
+        {
+            Intent intent = new Intent(this, typeof(MainActivity));
+            intent.PutExtra("Account", account.ToJson());
+            intent.PutExtra("User", user.ToJson());
+            this.StartActivity(intent);
+            Finish();
         }
     }
 }

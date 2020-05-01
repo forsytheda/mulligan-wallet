@@ -54,7 +54,9 @@ namespace MulliganWallet
         public BsonObjectId RecipientID { get; set; }
         public string Memo { get; set; }
         public float Amount { get; set; }
+        public DateTime DateCreated { get; set; }
         public BsonObjectId PaymentMethodID { get; set; }
+        public String Accepted { get; set; }
     }
     public class NotificationModel
     {

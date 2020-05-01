@@ -56,12 +56,7 @@ namespace MulliganWallet
                 }
             };
 
-            btnCancel.Click += (object sender, EventArgs args) => 
-            {
-                txtUserID.Text = String.Empty;
-                txtPassword.Text = String.Empty;
-                Finish();
-            };
+            btnCancel.Click += (object sender, EventArgs args) => { Finish(); };
         }
 
         private async void BtnLogin_Click(object sender, EventArgs e)
@@ -73,13 +68,11 @@ namespace MulliganWallet
             progress.Visibility = ViewStates.Invisible;
             if (result != null && result.Password == password)
             {
-                var account = await ModelMethods.FindAccountByUserID(result.Id);
-                float Balance = account == null ? 0.0f : account.Balance;
+                var account = await ModelMethods.FindAccountByPersonID(result.Id);
                 Toast.MakeText(this, "Login Successful", ToastLength.Short).Show();
                 Intent intent = new Intent(this, typeof(MainActivity));
-                intent.PutExtra("Balance", Balance);
-                intent.PutExtra("FullName", result.FullName);
-                intent.PutExtra("PersonID", result.Id.ToString());
+                intent.PutExtra("Account", account.ToJson());
+                intent.PutExtra("User", result.ToJson());
                 this.StartActivity(intent);
                 Finish();
             }
